@@ -75,7 +75,14 @@ def greeting_node(state):
     )
     return state
 
-
+def txt_reader(chemin_fichier):
+    with open(
+    chemin_fichier,
+    "r",
+    encoding="utf-8"
+    ) as fichier:
+        contenu = fichier.read()
+    return contenu
 
 def route_question(state):
     return state[
@@ -161,7 +168,7 @@ agent = workflow.compile()
 resultat = agent.invoke(
 {
 "question":
-"5//5 "
+"5*5 "
 }
 )
 

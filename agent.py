@@ -21,20 +21,33 @@ def reponse_node(state):
     )
     return state
 
+
 def decision_node(state):
-    question = state["question"]
-    if "bonjour" in question.lower():
+    question = state[
+    "question"
+    ].lower()
+    if "bonjour" in question:
         state["type_question"] = (
     "salutation"
     )
-    elif "+" in question:
+    elif (
+    "+" in question
+    or "-" in question
+    or "*" in question
+    or "/" in question
+    ):
+
         state["type_question"] = (
-        "calcul"
-        )
+    "calcul"
+    )
+    elif "lis" in question:
+        state["type_question"] = (
+    "lecture"
+    )
     else:
         state["type_question"] = (
-        "documentation"
-        )
+    "documentation"
+    )
     return state
 
 def calculatrice_node(state):
@@ -56,14 +69,26 @@ def greeting_node(state):
     )
     return state
 
-
+def txt_reader(chemin_fichier):
+    with open(
+    chemin_fichier,
+    "r",
+    encoding="utf-8"
+    ) as fichier:
+        contenu = fichier.read()
+    return contenu
 
 def route_question(state):
     return state[
 "type_question"
 ]
 
-
+def txt_reader_node(state):
+    contenu = txt_reader(
+    "documents/rh.txt"
+    )
+    state["reponse"] = contenu
+    return state
 
 workflow = StateGraph(
     AgentState
@@ -97,19 +122,28 @@ workflow.add_node(
 documentation_node
 )
 
+
+
+workflow.add_node(
+"txt_reader",
+txt_reader_node
+)
+
+
+
+
 workflow.add_conditional_edges(
 "decision",
 route_question,
 {
-"salutation":
-"salutation",
 "calcul":
 "calculatrice",
+"lecture":
+"txt_reader",
 "documentation":
 "documentation"
 }
 )
-
 
 workflow.set_entry_point(
     "analyse"
@@ -136,14 +170,20 @@ workflow.add_edge(
 END
 )
 
+workflow.add_edge(
+"txt_reader",
+END
+)
 
 agent = workflow.compile()
 
 resultat = agent.invoke(
 {
 "question":
-"Banjour, pouvez-vous m'aider avec un calcul ?"
+"Lis le fichier RH ?"
 }
 )
-
+print(
+txt_reader("documents/rh.txt")
+)
 print(resultat)
