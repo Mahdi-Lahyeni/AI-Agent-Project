@@ -5,6 +5,10 @@ from langgraph.graph import (
     END
 )
 
+from pypdf import PdfReader
+
+from docx import Document
+
 class AgentState(TypedDict):
     question: str
     reponse: str
@@ -36,13 +40,20 @@ def decision_node(state):
     or "*" in question
     or "/" in question
     ):
-
         state["type_question"] = (
     "calcul"
     )
-    elif "lis" in question:
+    elif ".pdf" in question:
         state["type_question"] = (
-    "lecture"
+    "pdf"
+    )
+    elif ".docx" in question:
+        state["type_question"] = (
+    "docx"
+    )
+    elif ".txt" in question:
+        state["type_question"] = (
+    "txt"
     )
     else:
         state["type_question"] = (
@@ -50,9 +61,16 @@ def decision_node(state):
     )
     return state
 
+def calculatrice(expression):
+    return eval(expression)
+
 def calculatrice_node(state):
-    state["reponse"] = (
-    "Résultat du calcul"
+    question = state["question"]
+    resultat = calculatrice(
+    question
+    )
+    state["reponse"] = str(
+    resultat
     )
     return state
 
@@ -78,6 +96,28 @@ def txt_reader(chemin_fichier):
         contenu = fichier.read()
     return contenu
 
+def pdf_reader(chemin_fichier):
+    lecteur = PdfReader(
+    chemin_fichier
+    )
+    contenu = ""
+    for page in lecteur.pages:
+        contenu += (
+    page.extract_text()
+    )
+    return contenu
+
+def docx_reader(chemin_fichier):
+    doc = Document(
+    chemin_fichier
+    )
+    contenu = ""
+    for paragraphe in doc.paragraphs:
+        contenu += (
+    paragraphe.text + "\n"
+    )
+    return contenu
+
 def route_question(state):
     return state[
 "type_question"
@@ -86,6 +126,20 @@ def route_question(state):
 def txt_reader_node(state):
     contenu = txt_reader(
     "documents/rh.txt"
+    )
+    state["reponse"] = contenu
+    return state
+
+def pdf_reader_node(state):
+    contenu = pdf_reader(
+    "documents/formation.pdf"
+    )
+    state["reponse"] = contenu
+    return state
+
+def docx_reader_node(state):
+    contenu = docx_reader(
+    "documents/procedure.docx"
     )
     state["reponse"] = contenu
     return state
@@ -121,16 +175,20 @@ workflow.add_node(
 "documentation",
 documentation_node
 )
-
-
-
 workflow.add_node(
 "txt_reader",
 txt_reader_node
 )
 
+workflow.add_node(
+"pdf_reader",
+pdf_reader_node
+)
 
-
+workflow.add_node(
+"docx_reader",
+docx_reader_node
+)
 
 workflow.add_conditional_edges(
 "decision",
@@ -138,7 +196,11 @@ route_question,
 {
 "calcul":
 "calculatrice",
-"lecture":
+"pdf":
+"pdf_reader",
+"docx":
+"docx_reader",
+"txt":
 "txt_reader",
 "documentation":
 "documentation"
@@ -175,6 +237,16 @@ workflow.add_edge(
 END
 )
 
+workflow.add_edge(
+"pdf_reader",
+END
+)
+
+workflow.add_edge(
+"docx_reader",
+END
+)
+
 agent = workflow.compile()
 
 resultat = agent.invoke(
@@ -187,3 +259,14 @@ print(
 txt_reader("documents/rh.txt")
 )
 print(resultat)
+
+resultat_calcul = agent.invoke(
+{
+"question":
+"5*5 "
+}
+)
+
+print(
+resultat_calcul["reponse"]
+)
