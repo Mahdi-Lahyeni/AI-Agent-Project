@@ -1,3 +1,7 @@
+import requests
+
+import re
+
 from typing import TypedDict
 
 from langgraph.graph import (
@@ -26,6 +30,18 @@ def reponse_node(state):
     return state
 
 
+def est_calcul(question):
+    return bool(
+    re.fullmatch(
+    r"[\d\s\.\+\-\*/\(\)]+",
+    question.strip()
+    )
+    ) and any(
+    operateur in question
+    for operateur in "+-*/"
+    )
+
+
 def decision_node(state):
     question = state[
     "question"
@@ -34,12 +50,7 @@ def decision_node(state):
         state["type_question"] = (
     "salutation"
     )
-    elif (
-    "+" in question
-    or "-" in question
-    or "*" in question
-    or "/" in question
-    ):
+    elif est_calcul(question):
         state["type_question"] = (
     "calcul"
     )
@@ -75,9 +86,13 @@ def calculatrice_node(state):
     return state
 
 def documentation_node(state):
-    state["reponse"] = (
-    "Réponse documentaire"
-    )
+    question = state["question"]
+    prompt = f"""
+    Réponds à cette question :
+    {question}
+    """
+    reponse = llm_local(prompt)
+    state["reponse"] = reponse
     return state
 
 
@@ -103,7 +118,7 @@ def pdf_reader(chemin_fichier):
     contenu = ""
     for page in lecteur.pages:
         contenu += (
-    page.extract_text()
+    page.extract_text() or ""
     )
     return contenu
 
@@ -127,22 +142,62 @@ def txt_reader_node(state):
     contenu = txt_reader(
     "documents/rh.txt"
     )
-    state["reponse"] = contenu
+    question = state["question"]
+    prompt = f"""
+    Contexte :
+    {contenu}
+    Question :
+    {question}
+    Réponse :
+    """
+    state["reponse"] = llm_local(
+    prompt
+    )
     return state
 
 def pdf_reader_node(state):
     contenu = pdf_reader(
     "documents/formation.pdf"
     )
-    state["reponse"] = contenu
+    question = state["question"]
+    prompt = f"""
+    Contexte :
+    {contenu}
+    Question :
+    {question}
+    Réponse :
+    """
+    state["reponse"] = llm_local(
+    prompt
+    )
     return state
 
 def docx_reader_node(state):
     contenu = docx_reader(
     "documents/procedure.docx"
     )
-    state["reponse"] = contenu
+    question = state["question"]
+    prompt = f"""
+    Contexte :
+    {contenu}
+    Question :
+    {question}
+    Réponse :
+    """
+    state["reponse"] = llm_local(
+    prompt
+    )
     return state
+
+def llm_local(prompt):
+    url = "http://localhost:11434/api/generate"
+    data = {
+        "model": "gemma3",
+        "prompt": prompt,
+        "stream": False
+            }
+    response = requests.post(url, json=data)
+    return response.json()["response"]
 
 workflow = StateGraph(
     AgentState
@@ -194,6 +249,8 @@ workflow.add_conditional_edges(
 "decision",
 route_question,
 {
+"salutation":
+"salutation",
 "calcul":
 "calculatrice",
 "pdf":
@@ -249,15 +306,25 @@ END
 
 agent = workflow.compile()
 
+contenu = txt_reader("documents/rh.txt")
+prompt = f"""
+Contexte :
+{contenu}
+Question :
+Quels sont les congés ?
+Réponse :
+"""
+
 resultat = agent.invoke(
 {
 "question":
-"Lis le fichier RH ?"
+"Qu'est-ce qu'un Agent IA ?"
 }
 )
 print(
 txt_reader("documents/rh.txt")
 )
+
 print(resultat)
 
 resultat_calcul = agent.invoke(
@@ -269,4 +336,8 @@ resultat_calcul = agent.invoke(
 
 print(
 resultat_calcul["reponse"]
+)
+
+resultat = agent.invoke(
+{"question": "Lis formation.pdf"}
 )
