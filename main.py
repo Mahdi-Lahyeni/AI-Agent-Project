@@ -29,20 +29,12 @@ def info():
 def utilisateur(nom):
     return {"message": f"Bonjour {nom}"}
 
+
 class QuestionRequest(BaseModel):
     question: str
 
+
 @app.post("/question")
-def poser_question(
-request: QuestionRequest
-):
-    resultat = agent.invoke(
-{
-"question":
-request.question
-}
-)
-    return {
-"reponse":
-resultat["reponse"]
-}
+def poser_question(request: QuestionRequest):
+    resultat = agent.invoke({"question": request.question})
+    return {"reponse": resultat["reponse"]}
