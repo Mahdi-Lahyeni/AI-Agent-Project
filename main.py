@@ -17,7 +17,7 @@ def bonjour():
 
 @app.get("/status")
 def status():
-    return {"status": "OK"}
+    return {"etat": "OK"}
 
 
 @app.get("/info")
@@ -36,5 +36,8 @@ class QuestionRequest(BaseModel):
 
 @app.post("/question")
 def poser_question(request: QuestionRequest):
-    resultat = agent.invoke({"question": request.question})
-    return {"reponse": resultat["reponse"]}
+    try:
+        resultat = agent.invoke({"question": request.question})
+        return {"reponse": resultat["reponse"]}
+    except Exception as e:
+        return {"erreur": str(e)}
