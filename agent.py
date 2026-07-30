@@ -212,7 +212,7 @@ Réponse :
 
 
 def llm_local(prompt):
-    url = "http://host.docker.internal:11434/api/generate"
+    url = ("http://host.docker.internal:11434/api/generate")   
     data = {"model": "gemma3", "prompt": prompt, "stream": False}
     response = requests.post(url, json=data)
     return response.json()["response"]
