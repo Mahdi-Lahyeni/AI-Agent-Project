@@ -217,6 +217,7 @@ def llm_local(prompt):
     response = requests.post(url, json=data)
     return response.json()["response"]
 
+
 workflow = StateGraph(AgentState)
 workflow.add_node("analyse", analyse_node)
 workflow.add_node("reponse", reponse_node)
@@ -260,19 +261,21 @@ workflow.add_edge("docx_reader", END)
 
 agent = workflow.compile()
 
-questions = [
-    "Quels sont les congés ?",
-    "Lis formation.pdf",
-    "50+20",
-    "Lis procedure.docx",
-]
+if __name__ == "__main__":
 
-memoire = []
+    questions = [
+        "Quels sont les congés ?",
+        "Lis formation.pdf",
+        "50+20",
+        "Lis procedure.docx",
+    ]
 
-for question in questions:
-    if question == "":
-        print("Veuillez saisir une question.")
-        continue
+    memoire = []
+
+    for question in questions:
+        if question == "":
+            print("Veuillez saisir une question.")
+            continue
 
     historique = "\n".join(memoire)
 
