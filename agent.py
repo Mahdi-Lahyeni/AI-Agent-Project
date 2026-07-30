@@ -217,22 +217,15 @@ def llm_local(prompt):
     response = requests.post(url, json=data)
     return response.json()["response"]
 
-
 workflow = StateGraph(AgentState)
-
 workflow.add_node("analyse", analyse_node)
-
 workflow.add_node("reponse", reponse_node)
-
 workflow.add_node("salutation", greeting_node)
-
 workflow.add_node("decision", decision_node)
 workflow.add_node("calculatrice", calculatrice_node)
 workflow.add_node("documentation", documentation_node)
 workflow.add_node("txt_reader", txt_reader_node)
-
 workflow.add_node("pdf_reader", pdf_reader_node)
-
 workflow.add_node("docx_reader", docx_reader_node)
 
 workflow.add_conditional_edges(
